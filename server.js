@@ -18,11 +18,13 @@ const whitelist = [
   "http://localhost:3000",
   "http://127.0.0.1:5500",
   "https://cricketstoreonline.com",
+  "https://cricketstoreonline.myshopify.com",
   "https://szf6kwy2dls7x8nw-62411112615.shopifypreview.com",
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
+    console.log("🌍 Incoming origin:", origin); 
     if (whitelist.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
