@@ -27,56 +27,14 @@ const warehouseProducts = JSON.parse(
   )
 );
 
-// export const collectionController = async (req, res) => {
-//   const collectionHandle = req.params.handle;
-//   const { locationId, size, weight, vendor } = req.query;
-
-//   if (!locationId) {
-//     return res.status(400).json({ error: "locationId query param is required" });
-//   }
-
-//   // Helper to filter products with multi-value support
-//   function multiFilter(products, key, queryValue) {
-//     if (!queryValue) return products;
-//     const values = queryValue.split(",").map((v) => v.trim());
-//     return products.filter((prod) => values.includes(prod[key]));
-//   }
-
-//   if (locationId === "gid://shopify/Location/68360798375") {
-//     console.log("🧾 newJerseyProducts count:", newJerseyProducts.length);
-
-//     let filteredProducts = [...newJerseyProducts];
-
-//     filteredProducts = multiFilter(filteredProducts, "size", size);
-//     filteredProducts = multiFilter(filteredProducts, "weight", weight);
-//     filteredProducts = multiFilter(filteredProducts, "vendor", vendor);
-
-//     return res.json({ items: filteredProducts });
-//   } else if (locationId === "gid://shopify/Location/70232211623") {
-//     console.log("🧾 cummingProducts count:", cummingProducts.length);
-//     // For simplicity, no filter on cached data here, add if needed
-//     return res.json({ items: cummingProducts });
-//   } else if (locationId === "gid://shopify/Location/76107481255") {
-//     console.log("🧾 warehouseProducts count:", warehouseProducts.length);
-//     return res.json({ totalCount: warehouseProducts.length, items: warehouseProducts });
-//   }
-
-//   // You can add dynamic Shopify API fetching here if needed (same as your original code)
-
-//   return res.status(404).json({ error: "Location not found or no cached data" });
-// };
 export const collectionController = async (req, res) => {
   const collectionHandle = req.params.handle;
-  const { locationId } = req.query;
+  const { locationId, size, weight, vendor, productType } = req.query;
 
   if (!locationId) {
     return res.status(400).json({ error: "locationId query param is required" });
   }
-
-  // Normalize collection handle to lowercase for comparison
   const normalizedHandle = collectionHandle.toLowerCase().replace(/-/g, " ");
-
-  // Helper function to filter by collection handle using categories
   function filterByCollection(products) {
     return products.filter((prod) => {
       return prod.categories?.some(
@@ -84,21 +42,33 @@ export const collectionController = async (req, res) => {
       );
     });
   }
-
   let products = [];
 
   if (locationId === "gid://shopify/Location/68360798375") {
-    console.log("🧾 newJerseyProducts count:", newJerseyProducts.length);
     products = filterByCollection(newJerseyProducts);
+    console.log("🧾 newJerseyProducts count:", products.length);
   } else if (locationId === "gid://shopify/Location/70232211623") {
-    console.log("🧾 cummingProducts count:", cummingProducts.length);
     products = filterByCollection(cummingProducts);
+    console.log("🧾 cummingProducts count:", products.length);
   } else if (locationId === "gid://shopify/Location/76107481255") {
-    console.log("🧾 warehouseProducts count:", warehouseProducts.length);
     products = filterByCollection(warehouseProducts);
+    console.log("🧾 warehouseProducts count:", products.length);
   } else {
     return res.status(404).json({ error: "Location not found or no cached data" });
   }
 
-  return res.json({ items: products });
+  const weightArray = weight ? weight.split(",") : [];
+  const gradeArray = productType ? productType.split(",") : [];
+  const sizeArray = size ? size.split(",") : [];
+  const vendorArray = vendor ? vendor.split(",") : [];
+
+  const filtered = products.filter((prod) => {
+    const sizeMatch = sizeArray.length === 0 || sizeArray.includes(prod.size);
+    const weightMatch = weightArray.length === 0 || weightArray.includes(prod.weight);
+    const vendorMatch = vendorArray.length === 0 || vendorArray.includes(prod.vendor);
+    const gradeMatch = gradeArray.length === 0 || gradeArray.includes(prod.productType);
+    return sizeMatch && weightMatch && vendorMatch && gradeMatch ;
+  });
+
+  return res.json({ items: filtered  });
 };
